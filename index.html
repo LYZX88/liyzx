@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>给小懒猫的生日礼物</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            overflow: hidden;
+            background-color: #1a0a2a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .birthday-text {
+            position: absolute;
+            color: #ff69b4;
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255, 105, 180, 0.7);
+            opacity: 0;
+            transition: opacity 2s ease-in-out;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        @media (max-width: 768px) {
+            .birthday-text {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="starCanvas"></canvas>
+    <div class="birthday-text" id="birthdayText">徐静蕾生日快乐</div>
+
+    <script>
+        // 获取Canvas元素和上下文
+        const canvas = document.getElementById('starCanvas');
+        const ctx = canvas.getContext('2d');
+        const birthdayText = document.getElementById('birthdayText');
+        
+        // 设置Canvas尺寸为窗口大小
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        // 初始化时设置Canvas尺寸
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        // 星空背景颜色
+        const backgroundColor = '#2d1b4e'; // 淡紫色
+        
+        // 星星数组
+        let stars = [];
+        
+        // 流星数组
+        let meteors = [];
+        
+        // 爱心数组
+        let hearts = [];
+        
+        // 星系参数
+        let galaxyRotation = 0;
+        let galaxyVisible = true;
+        
+        // 初始化星星
+        function initStars() {
+            stars = [];
+            const starCount = 200;
+            
+            for (let i = 0; i < starCount; i++) {
+                stars.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 1.5 + 0.5,
+                    brightness: Math.random() * 0.5 + 0.5
+                });
+            }
+        }
+        
+        // 绘制星星
+        function drawStars() {
+            ctx.fillStyle = '#ffffff';
+            
+            stars.forEach(star => {
+                ctx.globalAlpha = star.brightness;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.radius, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            
+            ctx.globalAlpha = 1;
+        }
+        
+        // 创建新流星
+        function createMeteor() {
+            meteors.push({
+                x: Math.random() * canvas.width,
+                y: -20,
+                speed: Math.random() * 10 + 5,
+                length: Math.random() * 50 + 30,
+                trail: []
+            });
+        }
+        
+        // 绘制流星
+        function drawMeteors() {
+            meteors.forEach((meteor, index) => {
+                // 更新流星位置
+                meteor.x -= meteor.speed * 0.5;
+                meteor.y += meteor.speed;
+                
+                // 添加轨迹点
+                meteor.trail.push({x: meteor.x, y: meteor.y});
+                
+                // 限制轨迹长度
+                if (meteor.trail.length > meteor.length) {
+                    meteor.trail.shift();
+                }
+                
+                // 绘制流星轨迹
+                if (meteor.trail.length > 1) {
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.globalAlpha = 1;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(meteor.trail[0].x, meteor.trail[0].y);
+                    
+                    for (let i = 1; i < meteor.trail.length; i++) {
+                        // 轨迹逐渐变淡
+                        ctx.globalAlpha = i / meteor.trail.length;
+                        ctx.lineTo(meteor.trail[i].x, meteor.trail[i].y);
+                    }
+                    
+                    ctx.stroke();
+                    ctx.globalAlpha = 1;
+                }
+                
+                // 绘制流星头部
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(meteor.x, meteor.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 如果流星移出屏幕，移除它
+                if (meteor.y > canvas.height || meteor.x < 0) {
+                    meteors.splice(index, 1);
+                }
+            });
+        }
+        
+        // 绘制旋转星系
+        function drawGalaxy() {
+            if (!galaxyVisible) return;
+            
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(canvas.width, canvas.height) * 0.15;
+            
+            ctx.save();
+            ctx.translate(centerX, centerY);
+            ctx.rotate(galaxyRotation);
+            
+            // 绘制星系漩涡
+            for (let i = 0; i < 5; i++) {
+                const spiralRadius = radius * (i / 5 + 0.2);
+                const spiralWidth = spiralRadius * 0.3;
+                
+                ctx.beginPath();
+                ctx.ellipse(0, 0, spiralRadius, spiralWidth, 0, 0, Math.PI * 2);
+                
+                // 创建粉红色渐变
+                const gradient = ctx.createRadialGradient(0, 0, 0, 0, 0, spiralRadius);
+                gradient.addColorStop(0, `rgba(255, ${100 + i * 30}, ${180 + i * 15}, 0.8)`);
+                gradient.addColorStop(1, `rgba(255, ${100 + i * 30}, ${180 + i * 15}, 0)`);
+                
+                ctx.fillStyle = gradient;
+                ctx.fill();
+            }
+            
+            // 绘制星系中心
+            ctx.beginPath();
+            ctx.arc(0, 0, radius * 0.2, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff69b4';
+            ctx.fill();
+            
+            ctx.restore();
+            
+            // 更新旋转角度
+            galaxyRotation += 0.005;
+        }
+        
+        // 绘制爱心
+        function drawHearts() {
+            hearts.forEach((heart, index) => {
+                // 更新爱心参数
+                heart.scale += 0.05;
+                heart.alpha -= 0.02;
+                
+                // 如果爱心完全透明，移除它
+                if (heart.alpha <= 0) {
+                    hearts.splice(index, 1);
+                    return;
+                }
+                
+                // 绘制爱心
+                ctx.save();
+                ctx.translate(heart.x, heart.y);
+                ctx.scale(heart.scale, heart.scale);
+                ctx.globalAlpha = heart.alpha;
+                ctx.fillStyle = heart.color;
+                
+                // 爱心形状
+                ctx.beginPath();
+                const size = 10;
+                ctx.moveTo(0, 0);
+                for (let angle = 0; angle < Math.PI * 2; angle += 0.01) {
+                    const x = size * 16 * Math.pow(Math.sin(angle), 3);
+                    const y = -size * (13 * Math.cos(angle) - 5 * Math.cos(2 * angle) - 2 * Math.cos(3 * angle) - Math.cos(4 * angle));
+                    ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+                ctx.fill();
+                
+                ctx.restore();
+            });
+        }
+        
+        // 创建爱心
+        function createHeart(x, y) {
+            hearts.push({
+                x: x,
+                y: y,
+                scale: 1,
+                alpha: 1,
+                color: `hsl(${Math.random() * 60 + 320}, 100%, 70%)` // 粉色系
+            });
+        }
+        
+        // 检查点击是否在星系内
+        function isClickInGalaxy(x, y) {
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const radius = Math.min(canvas.width, canvas.height) * 0.15;
+            
+            const distance = Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2);
+            return distance <= radius;
+        }
+        
+        // 显示生日祝福
+        function showBirthdayText() {
+            birthdayText.style.opacity = 1;
+        }
+        
+        // 主绘制函数
+        function draw() {
+            // 绘制背景
+            ctx.fillStyle = backgroundColor;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制各种元素
+            drawStars();
+            drawMeteors();
+            drawGalaxy();
+            drawHearts();
+            
+            // 随机生成流星
+            if (Math.random() < 0.02) {
+                createMeteor();
+            }
+            
+            requestAnimationFrame(draw);
+        }
+        
+        // 初始化
+        function init() {
+            initStars();
+            draw();
+            
+            // 添加点击事件监听
+            canvas.addEventListener('click', function(event) {
+                const rect = canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+                
+                // 检查是否点击了星系
+                if (galaxyVisible && isClickInGalaxy(x, y)) {
+                    galaxyVisible = false;
+                    setTimeout(showBirthdayText, 500);
+                } else {
+                    // 创建两个爱心
+                    createHeart(x, y);
+                    createHeart(x + 20, y - 20);
+                }
+            });
+        }
+        
+        // 启动动画
+        init();
+    </script>
+
+</body>
+
+</head>
+</html>
